@@ -1,0 +1,13 @@
+{
+	"name": "Flow meter",
+	"wifi" : {
+		"ssid": "zoo-rozciapkow",
+		"password": "biszkopty"
+	},
+	"mqtt": {
+		"host": "192.168.30.64"
+	},
+	"ota": {
+		"enabled": true
+	}
+}
