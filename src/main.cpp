@@ -8,7 +8,7 @@ bool broadcastHandler(const String& level, const String& value) {
 void setup() {
   Serial.begin(9600);
   Serial << endl << endl;
-  Homie_setFirmware("broadcast-test", "1.0.0");
+  Homie_setFirmware("flow-metergit ", "1.0.0");
   Homie.setBroadcastHandler(broadcastHandler);
 
   Homie.setup();
