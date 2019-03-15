@@ -1,4 +1,5 @@
 #include <Homie.h>
+#include <ota_wrapper.h>
 
 bool broadcastHandler(const String& level, const String& value) {
   Homie.getLogger() << "Received broadcast level " << level << ": " << value << endl;
@@ -12,8 +13,12 @@ void setup() {
   Homie.setBroadcastHandler(broadcastHandler);
 
   Homie.setup();
+
+  ota_setup ();
 }
 
 void loop() {
   Homie.loop();
+
+  ota_handle ();
 }
