@@ -1,9 +1,6 @@
 #include <Homie.h>
-//#include <ota_wrapper.h>
 
 HomieNode flowNode("flow", "Flow", "flow");
-//HomieNode pulseRatio ("pulse-ratio", "pulse-ratio");
-HomieNode rawFlowNode("pulse", "Pulse", "pulse");
 
 bool broadcastHandler(const String &level, const String &value)
 {
@@ -23,27 +20,41 @@ flow_meter_isr()
     ++flow_count;
 }
 
-const int FLOW_INTERVAL = 1;
+const unsigned long FLOW_INTERVAL = 250UL;
+const float beats_per_litre = 373.3962;
 
-unsigned long lastFlowSent = 0;
+unsigned long last_update_time = 0;
+unsigned long last_state_seen = 0;
 
 unsigned int seconds = 0;
 
 void loopHandler()
 {
-    if (millis() - lastFlowSent >= FLOW_INTERVAL * 1000UL || lastFlowSent == 0)
+    unsigned long time_now = millis();
+    unsigned long time_elapsed = time_now - last_update_time;
+
+    if (time_elapsed >= FLOW_INTERVAL || last_update_time == 0)
     {
+        unsigned long incremental_beats = flow_count - last_state_seen;
 
-        unsigned long current_flow_count = flow_count;
+        float cumulative_flow = (float)flow_count / beats_per_litre;
 
-        flow_count = 0;
+        float flow_per_minute = 60000.0 * ((float)incremental_beats / ((float)time_elapsed * beats_per_litre));
+        float incremental_flow = (float)incremental_beats / beats_per_litre;
 
-        float flow = 60.0 * ((float)current_flow_count) / ((float)flow_ratio);
+        float beats_per_sec = 1000 * (float)incremental_beats / ((float)time_elapsed);
 
-        flowNode.setProperty("litres").send(String(flow));
-        rawFlowNode.setProperty("beats").send(String(current_flow_count));
+        last_state_seen = flow_count;
+        last_update_time = time_now;
 
-        lastFlowSent = millis();
+        flowNode.setProperty("flow").send(String(flow_per_minute));
+        flowNode.setProperty("beats").send(String(beats_per_sec));
+
+        flowNode.setProperty("cumulative-flow").send(String(cumulative_flow));
+        flowNode.setProperty("cumulative-beats").send(String(flow_count));
+
+        flowNode.setProperty("incremental-flow").send(String(incremental_flow));
+        flowNode.setProperty("incremental-beats").send(String(incremental_beats));
     }
 }
 
@@ -56,8 +67,14 @@ void setup()
     Homie.setBroadcastHandler(broadcastHandler);
     Homie.setLoopFunction(loopHandler);
 
-    flowNode.advertise("litres").setName("Litres per minute").setDatatype("float").setUnit("l/min");
-    rawFlowNode.advertise("beats").setName("Beats per second").setDatatype("integer").setUnit("bps");
+    flowNode.advertise("flow").setName("Litres per minute").setDatatype("float").setUnit("l/min");
+    flowNode.advertise("beats").setName("Beats per second").setDatatype("integer").setUnit("bps");
+
+    flowNode.advertise("cumulative-flow").setName("Cumulative flow").setDatatype("float").setUnit("litres");
+    flowNode.advertise("cumulative-beats").setName("Cumulative beats").setDatatype("integer").setUnit("beats");
+
+    flowNode.advertise("incremental-flow").setName("Incremental flow").setDatatype("float").setUnit("litres");
+    flowNode.advertise("incremental-beats").setName("Incremental beats").setDatatype("integer").setUnit("beats");
 
     Homie.setup();
 
