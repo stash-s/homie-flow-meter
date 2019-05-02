@@ -14,19 +14,24 @@ unsigned long flow_ratio = 1000;
 
 //1000;
 
-ICACHE_FLASH_ATTR void
+ICACHE_RAM_ATTR void
 flow_meter_isr()
 {
     ++flow_count;
 }
 
-const unsigned long FLOW_INTERVAL = 250UL;
+const unsigned long FLOW_INTERVAL = 1000UL;
 const float beats_per_litre = 373.3962;
 
 unsigned long last_update_time = 0;
 unsigned long last_state_seen = 0;
 
 unsigned int seconds = 0;
+
+inline String to_string(float value)
+{
+    return String(value, 5);
+}
 
 void loopHandler()
 {
@@ -47,13 +52,13 @@ void loopHandler()
         last_state_seen = flow_count;
         last_update_time = time_now;
 
-        flowNode.setProperty("flow").send(String(flow_per_minute));
+        flowNode.setProperty("flow").send(to_string(flow_per_minute));
         flowNode.setProperty("beats").send(String(beats_per_sec));
 
-        flowNode.setProperty("cumulative-flow").send(String(cumulative_flow));
+        flowNode.setProperty("cumulative-flow").send(to_string(cumulative_flow));
         flowNode.setProperty("cumulative-beats").send(String(flow_count));
 
-        flowNode.setProperty("incremental-flow").send(String(incremental_flow));
+        flowNode.setProperty("incremental-flow").send(to_string(incremental_flow));
         flowNode.setProperty("incremental-beats").send(String(incremental_beats));
     }
 }
